@@ -1,0 +1,452 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Universal Script",
+   LoadingTitle = "Загрузка скрипта...",
+   LoadingSubtitle = "by Community",
+   ConfigurationSaving = {
+      Enabled = false,
+      FolderName = nil,
+      FileName = "UniversalConfig"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "",
+      RememberJoins = true
+   },
+   KeySystem = false
+})
+
+-- Переменные для функций
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Настройки по умолчанию
+local Config = {
+    Speedhack = false,
+    SpeedValue = 16,
+    Noclip = false,
+    Bhop = false,
+    Spin = false,
+    SpinSpeed = 50,
+    JumpPowerToggle = false,
+    JumpPowerValue = 50,
+    HitboxSize = 2,
+    HitboxToggle = false,
+    Fullbright = false
+}
+
+-- Таблицы для хранения визуалов ESP
+local ESP_Boxes = {}
+local ESP_Lines = {}
+local ESP_Highlights = {}
+local ESP_Names = {}
+
+-- Переменные для ESP настроек
+local ESP_Box_Enabled = false
+local ESP_Line_Enabled = false
+local ESP_Highlight_Enabled = false
+local ESP_Name_Enabled = false
+
+------------------------------------------------------------------------
+-- ВКЛАДКИ (Соответствуют вкладкам на скриншоте image.png)
+------------------------------------------------------------------------
+local TabESP = Window:CreateTab("ESP", nil)
+local TabMovement = Window:CreateTab("Movement", nil)
+local TabTeleport = Window:CreateTab("Teleport", nil)
+local TabOther = Window:CreateTab("Other", nil)
+
+------------------------------------------------------------------------
+-- ВКЛАДКА: ESP
+------------------------------------------------------------------------
+TabESP:CreateSection("Визуалы Игроков")
+
+TabESP:CreateToggle({
+   Name = "Бокс (Boxes)",
+   CurrentValue = false,
+   Callback = function(Value)
+      ESP_Box_Enabled = Value
+   end,
+})
+
+TabESP:CreateToggle({
+   Name = "Линия до Игрока (Tracers)",
+   CurrentValue = false,
+   Callback = function(Value)
+      ESP_Line_Enabled = Value
+   end,
+})
+
+TabESP:CreateToggle({
+   Name = "Подсветка (Highlights)",
+   CurrentValue = false,
+   Callback = function(Value)
+      ESP_Highlight_Enabled = Value
+   end,
+})
+
+TabESP:CreateToggle({
+   Name = "Имена (Names)",
+   CurrentValue = false,
+   Callback = function(Value)
+      ESP_Name_Enabled = Value
+   end,
+})
+
+------------------------------------------------------------------------
+-- ВКЛАДКА: MOVEMENT (Точь-в-точь как на изображении image.png)
+------------------------------------------------------------------------
+TabMovement:CreateSection("Настройки Движения")
+
+TabMovement:CreateToggle({
+   Name = "SPEEDHACK",
+   CurrentValue = false,
+   Callback = function(Value)
+      Config.Speedhack = Value
+   end,
+})
+
+TabMovement:CreateSlider({
+   Name = "Speed Value",
+   Range = {16, 500},
+   Increment = 1,
+   Suffix = "Walkspeed",
+   CurrentValue = 16,
+   Flag = "SpeedSlider",
+   Callback = function(Value)
+      Config.SpeedValue = Value
+   end,
+})
+
+TabMovement:CreateToggle({
+   Name = "NOCLIP",
+   CurrentValue = false,
+   Callback = function(Value)
+      Config.Noclip = Value
+   end,
+})
+
+TabMovement:CreateToggle({
+   Name = "BHOP (Auto Jump)",
+   CurrentValue = false,
+   Callback = function(Value)
+      Config.Bhop = Value
+   end,
+})
+
+TabMovement:CreateToggle({
+   Name = "SPIN",
+   CurrentValue = false,
+   Callback = function(Value)
+      Config.Spin = Value
+   end,
+})
+
+TabMovement:CreateSlider({
+   Name = "Spin Speed",
+   Range = {10, 500},
+   Increment = 5,
+   Suffix = "deg/sec",
+   CurrentValue = 50,
+   Flag = "SpinSlider",
+   Callback = function(Value)
+      Config.SpinSpeed = Value
+   end,
+})
+
+TabMovement:CreateToggle({
+   Name = "JUMP POWER",
+   CurrentValue = false,
+   Callback = function(Value)
+      Config.JumpPowerToggle = Value
+   end,
+})
+
+TabMovement:CreateSlider({
+   Name = "Jump Power Value",
+   Range = {50, 500},
+   Increment = 1,
+   Suffix = "JumpPower",
+   CurrentValue = 50,
+   Flag = "JumpSlider",
+   Callback = function(Value)
+      Config.JumpPowerValue = Value
+   end,
+})
+
+------------------------------------------------------------------------
+-- ВКЛАДКА: TELEPORT
+------------------------------------------------------------------------
+TabTeleport:CreateSection("Телепортация по координатам")
+
+local TargetX, TargetY, TargetZ = 0, 0, 0
+
+TabTeleport:CreateInput({
+   Name = "Координата X",
+   PlaceholderText = "Пример: 100",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      TargetX = tonumber(Text) or 0
+   end,
+})
+
+TabTeleport:CreateInput({
+   Name = "Координата Y",
+   PlaceholderText = "Пример: 20",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      TargetY = tonumber(Text) or 0
+   end,
+})
+
+TabTeleport:CreateInput({
+   Name = "Координата Z",
+   PlaceholderText = "Пример: -150",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      TargetZ = tonumber(Text) or 0
+   end,
+})
+
+TabTeleport:CreateButton({
+   Name = "Телепортироваться",
+   Callback = function()
+      local character = LocalPlayer.Character
+      if character and character:FindFirstChild("HumanoidRootPart") then
+         character.HumanoidRootPart.CFrame = CFrame.new(TargetX, TargetY, TargetZ)
+         Rayfield:Notify({Title = "Телепорт", Content = "Вы успешно телепортированы!", Duration = 3})
+      end
+   end,
+})
+
+------------------------------------------------------------------------
+-- ВКЛАДКА: OTHER
+------------------------------------------------------------------------
+TabOther:CreateSection("Увеличение Хитбоксов")
+
+TabOther:CreateToggle({
+   Name = "Включить большие Хитбоксы",
+   CurrentValue = false,
+   Callback = function(Value)
+      Config.HitboxToggle = Value
+   end,
+})
+
+TabOther:CreateSlider({
+   Name = "Размер Хитбокса",
+   Range = {2, 30},
+   Increment = 1,
+   Suffix = "студий",
+   CurrentValue = 2,
+   Callback = function(Value)
+      Config.HitboxSize = Value
+   end,
+})
+
+TabOther:CreateSection("Утилиты")
+
+TabOther:CreateToggle({
+   Name = "Полное Освещение (Fullbright)",
+   CurrentValue = false,
+   Callback = function(Value)
+      Config.Fullbright = Value
+      if not Value then
+         game:GetService("Lighting").Ambient = Color3.fromRGB(128, 128, 128)
+      end
+   end,
+})
+
+TabOther:CreateButton({
+   Name = "Получить Мои Координаты",
+   Callback = function()
+      local character = LocalPlayer.Character
+      if character and character:FindFirstChild("HumanoidRootPart") then
+         local pos = character.HumanoidRootPart.Position
+         local formatPos = string.format("X: %.2f, Y: %.2f, Z: %.2f", pos.X, pos.Y, pos.Z)
+         -- Выводим на экран и копируем в буфер обмена
+         setclipboard(tostring(pos))
+         Rayfield:Notify({Title = "Координаты скопированы!", Content = formatPos, Duration = 5})
+      end
+   end,
+})
+
+
+------------------------------------------------------------------------
+-- ЛОГИКА РАБОТЫ ВСЕХ ФУНКЦИЙ (Циклы и Проверки)
+------------------------------------------------------------------------
+
+-- Цикл для параметров движения (Speedhack, JumpPower, Noclip, Spin, Bhop, Fullbright, Hitboxes)
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+    -- Спидхак
+    if hum and Config.Speedhack then
+        hum.WalkSpeed = Config.SpeedValue
+    elseif hum and not Config.Speedhack then
+        -- Не перебиваем стандартную, если отключено
+    end
+
+    -- Сила прыжка
+    if hum and Config.JumpPowerToggle then
+        hum.JumpPower = Config.JumpPowerValue
+        hum.UseJumpPower = true
+    end
+
+    -- Ноуклип
+    if char and Config.Noclip then
+        for _, part in pairs(char:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+
+    -- БХоп (Авто-прыжок)
+    if hum and Config.Bhop then
+        if hum.MoveDirection.Magnitude > 0 and hrp and math.abs(hrp.Velocity.Y) < 0.1 then
+            hum.Jump = true
+        end
+    end
+
+    -- Спинбот (Вращение)
+    if hrp and Config.Spin then
+        hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(Config.SpinSpeed / 10), 0)
+    end
+
+    -- Полное освещение
+    if Config.Fullbright then
+        game:GetService("Lighting").Ambient = Color3.fromRGB(255, 255, 255)
+    end
+
+    -- Увеличение Хитбоксов врагов
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local enemyHrp = player.Character.HumanoidRootPart
+            if Config.HitboxToggle then
+                enemyHrp.Size = Vector3.new(Config.HitboxSize, Config.HitboxSize, Config.HitboxSize)
+                enemyHrp.Transparency = 0.7
+                enemyHrp.Color = Color3.fromRGB(255, 0, 0)
+                enemyHrp.CanCollide = false
+            else
+                enemyHrp.Size = Vector3.new(2, 2, 1)
+                enemyHrp.Transparency = 1
+            end
+        end
+    end
+end)
+
+
+-- ЛОГИКА РИСОВАНИЯ ESP (Box, Tracers, Names, Highlights)
+local function CreateESP(player)
+    local box = Drawing.new("Square")
+    box.Visible = false
+    box.Color = Color3.fromRGB(255, 0, 0)
+    box.Thickness = 1
+    box.Filled = false
+    ESP_Boxes[player] = box
+
+    local line = Drawing.new("Line")
+    line.Visible = false
+    line.Color = Color3.fromRGB(0, 255, 0)
+    line.Thickness = 1
+    ESP_Lines[player] = line
+
+    local text = Drawing.new("Text")
+    text.Visible = false
+    text.Color = Color3.fromRGB(255, 255, 255)
+    text.Size = 16
+    text.Center = true
+    text.Outline = true
+    ESP_Names[player] = text
+
+    player.CharacterAdded:Connect(function(char)
+        task.wait(0.5)
+        if ESP_Highlight_Enabled and not char:FindFirstChild("ESPHighlight") then
+            local hl = Instance.new("Highlight")
+            hl.Name = "ESPHighlight"
+            hl.FillColor = Color3.fromRGB(255, 0, 0)
+            hl.FillTransparency = 0.5
+            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+            hl.Parent = char
+        end
+    end)
+end
+
+for _, p in pairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then CreateESP(p) end
+end
+Players.PlayerAdded:Connect(CreateESP)
+
+Players.PlayerRemoving:Connect(function(player)
+    if ESP_Boxes[player] then ESP_Boxes[player]:Remove() ESP_Boxes[player] = nil end
+    if ESP_Lines[player] then ESP_Lines[player]:Remove() ESP_Lines[player] = nil end
+    if ESP_Names[player] then ESP_Names[player]:Remove() ESP_Names[player] = nil end
+end)
+
+RunService.RenderStepped:Connect(function()
+    local camera = workspace.CurrentCamera
+    for player, box in pairs(ESP_Boxes) do
+        local char = player.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = char and char:FindFirstChild("Humanoid")
+        
+        -- Управление подсветкой (Highlight) в реальном времени
+        if char then
+            local existingHl = char:FindFirstChild("ESPHighlight")
+            if ESP_Highlight_Enabled and not existingHl then
+                local hl = Instance.new("Highlight")
+                hl.Name = "ESPHighlight"
+                hl.FillColor = Color3.fromRGB(0, 170, 255)
+                hl.Parent = char
+            elseif not ESP_Highlight_Enabled and existingHl then
+                existingHl:Destroy()
+            end
+        end
+
+        if hrp and hum and hum.Health > 0 then
+            local pos, onScreen = camera:WorldToViewportPoint(hrp.Position)
+            
+            if onScreen then
+                -- Логика Боксов
+                if ESP_Box_Enabled then
+                    local sizeX = camera.ViewportSize.X / pos.Z * 2
+                    local sizeY = camera.ViewportSize.Y / pos.Z * 2
+                    box.Size = Vector2.new(sizeX, sizeY)
+                    box.Position = Vector2.new(pos.X - sizeX / 2, pos.Y - sizeY / 2)
+                    box.Visible = true
+                else
+                    box.Visible = false
+                end
+
+                -- Логика Линий (Трейсеров)
+                if ESP_Line_Enabled and ESP_Lines[player] then
+                    ESP_Lines[player].From = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y)
+                    ESP_Lines[player].To = Vector2.new(pos.X, pos.Y)
+                    ESP_Lines[player].Visible = true
+                else
+                    if ESP_Lines[player] then ESP_Lines[player].Visible = false end
+                end
+
+                -- Логика Имен
+                if ESP_Name_Enabled and ESP_Names[player] then
+                    ESP_Names[player].Position = Vector2.new(pos.X, pos.Y - (camera.ViewportSize.Y / pos.Z * 1.2))
+                    ESP_Names[player].Text = player.Name
+                    ESP_Names[player].Visible = true
+                else
+                    if ESP_Names[player] then ESP_Names[player].Visible = false end
+                end
+            else
+                box.Visible = false
+                if ESP_Lines[player] then ESP_Lines[player].Visible = false end
+                if ESP_Names[player] then ESP_Names[player].Visible = false end
+            end
+        else
+            box.Visible = false
+            if ESP_Lines[player] then ESP_Lines[player].Visible = false end
+            if ESP_Names[player] then ESP_Names[player].Visible = false end
+        end
+    end
+end)
